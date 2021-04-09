@@ -1,0 +1,27 @@
+#include  <msp430xG46x.h>
+;-------------------------------------------------------------------------------          
+           NAME    Main
+           PUBLIC  Main
+           EXTERN  func1,func3,P9Config,funck2          
+           
+
+           RSEG    CSTACK                  
+           RSEG    CODE
+IDstr      DW      "205478605316309285" 
+Main       mov.w   #SFE(CSTACK),SP          
+StopWDT    mov.w   #WDTPW+WDTHOLD,&WDTCTL  
+           CLR     &PBOUT
+           call    #P9Config
+L          call    #func3
+           call    #func1
+           push    #IDstr
+           call    #funck2
+           ADD     #2,SP
+           jmp     L
+           nop              ; for debugging    
+;*******************************************************************************
+           COMMON  INTVEC  ;Interrupt Vectors-Begins a common segment INTVEC 
+;*******************************************************************************
+           ORG     RESET_VECTOR   ; MSP430 RESET Vector
+           DW      Main                   
+           END     

@@ -1,0 +1,120 @@
+#include  <msp430xG46x.h>
+
+                MODULE    Function
+                PUBLIC    func1,func3,P9Config,funck2
+                EXTERN    Delay500us, Delayhalfsec
+                RSEG      CODE
+                
+P9Config        CLR     &PBOUT
+                bis.b   #0xff,&P9DIR            ; SetupP9
+                bis.b   #0xff,&P10DIR           ; SetupP10
+                bic.b   #0x0f,&P1DIR            ; SetupP1            ; SetupP1
+                bis.b   #0xff,&P7DIR            ; setupP7
+                bis.b   #0xf0,&P1DIR
+                ret
+;=====================================================================            
+   
+func3       cmp.b   #0x64,&P1IN
+            jnz      finish3      
+
+Mainloop3    mov.b   #0x01,R14
+            mov.b   R14,&P7OUT
+            
+            cmp.b   #0x64,&P1IN
+            jnz      finish3            
+            
+Wait        mov.w   #0175,R15               ; Delay to R15, #050000 --> R15  
+L           dec.w   R15                     ; Decrement R15
+            jnz     L                       ; Declay over?, jump if not zero(if bit Z in SR isn't zero from the last command)
+             
+            mov.b   #0x00,R14
+            mov.b   R14,&P7OUT
+            
+            cmp.b   #0x64,&P1IN
+            jnz      finish3             
+            
+Wait2       mov.w   #0175,R15                ; Delay to R15, #050000 --> R15  
+L1          dec.w   R15                      ; Decrement R15
+            jnz     L1                       ; Delay over?, jump if not zero(if bit Z in SR isn't zero from the last command)
+                         
+            jmp     Mainloop3
+            
+finish3      mov.b   #0x00,&P7OUT
+            ret            
+;=====================================================================  
+func1       clr   &PBOUT
+subloop1    call  #Delayhalfsec
+            CMP.B #0x61,&P1IN
+            JNZ   end1
+            cmp   #0xffff,&PBOUT
+            JZ    func1
+            inc   &PBOUT
+            JMP   subloop1
+end1        ret
+
+;=======================================================================
+
+funck2      push   R12
+            push   R13
+            push   R14
+            push   R15
+init        mov    10(SP),R15 
+
+MAINLOOP2   cmp.b  #0x62,&P1IN
+            jnz    end2 
+            mov.b @R15,R14
+            CMP   #0,R14
+            JZ    init
+            call  #Func
+            MOV   R12,&PBOUT
+            call  #Delayhalfsec
+            CMP.B #0x62,&P1IN
+            JNZ   end2
+            INC   R15
+            JMP   MAINLOOP2
+end2        pop   R15
+            pop   R14
+            pop   R13
+            pop   R12
+            clr   &PBOUT
+            ret
+            
+
+Func        clr   R13
+            mov.b #0x01,R12
+            bis.b R14,R13
+            bic.b #0xf0,R13
+subloop2    tst   R13
+            jz    result
+            rla   R12
+            dec   R13
+            jmp   subloop2
+result      ret
+                
+;=======================================================================
+                ENDMOD 
+//============================================================== 
+//==============================================================
+                MODULE  Delay
+                PUBLIC  Delay500us, Delayhalfsec
+                RSEG    CODE
+            
+Delay500us      push    R15
+                mov.w  #165,R15              
+L1              dec.w   R15                     
+                jnz     L1
+                pop     R15
+                ret
+            
+Delayhalfsec    push    R13
+                mov.w   #1000,R13              
+L2              call    #Delay500us
+                dec.w   R13                     
+                jnz     L2
+                pop     R13
+                ret
+            
+                ENDMOD
+//=============================================================            
+                END
+                END
